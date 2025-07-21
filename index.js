@@ -53,8 +53,9 @@ app.post('/webhook', async (req, res) => {
       console.warn(chalk.gray(`⚠️ Pull warning (may be empty repo): ${pullErr.message}`));
     }
 
+    const safeGitlabRepo = process.env.GITLAB_REPO_URL || 'repo';
     // 🔁 Step 4: Push to GitLab
-    console.log(chalk.blue(`🚀 Pushing to GitLab: ${gitlabRepo}`));
+    console.log(chalk.blue(`🚀 Pushing to GitLab: ${safeGitlabRepo}`));
     await repoGit.push('gitlab', branch);
 
     console.log(chalk.green.bold(`✅ Successfully mirrored ${repoName}@${branch} to GitLab`));
