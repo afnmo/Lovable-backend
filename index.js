@@ -43,7 +43,9 @@ app.post('/webhook', async (req, res) => {
     await git.clone(githubRepo, localPath, ['--depth=1', '--branch', branch]);
 
     // 🔁 Step 3: Set remote to GitLab and push
-    console.log(chalk.blue(`🔧 Replacing remote and pushing to GitLab: ${gitlabRepo}`));
+    const gitlabUrlSafe = process.env.GITLAB_REPO_URL;
+
+    console.log(chalk.blue(`🔧 Replacing remote and pushing to GitLab: ${gitlabUrlSafe}`));
     const repoGit = simpleGit({ baseDir: localPath });
     await repoGit.removeRemote('origin');
     await repoGit.addRemote('origin', gitlabRepo);
