@@ -21,8 +21,8 @@ app.post('/webhook', async (req, res) => {
   try {
     const payload = req.body;
 
-    const githubRepo = payload.repository.clone_url; // GitHub HTTPS URL
-    const branch = payload.ref.split('/').pop();     // Extract branch from ref
+    const githubRepo = payload.repository.clone_url;
+    const branch = payload.ref.split('/').pop();
     const repoName = payload.repository.name;
     const localPath = path.join(TEMP_DIR, repoName);
 
@@ -40,16 +40,22 @@ app.post('/webhook', async (req, res) => {
     // 🔄 Step 2: Clone from GitHub
     console.log(chalk.cyan(`🔄 Cloning from ${githubRepo} (branch: ${branch})...`));
     const git = simpleGit();
-    await git.clone(githubRepo, localPath, ['--depth=1', '--branch', branch]);
+    await git.clone(githubRepo, localPath, ['--branch', branch]);
 
-    // 🔁 Step 3: Set remote to GitLab and push
-    const gitlabUrlSafe = process.env.GITLAB_REPO_URL;
-
-    console.log(chalk.blue(`🔧 Replacing remote and pushing to GitLab: ${gitlabUrlSafe}`));
     const repoGit = simpleGit({ baseDir: localPath });
-    await repoGit.removeRemote('origin');
-    await repoGit.addRemote('origin', gitlabRepo);
-    await repoGit.push('origin', branch);
+
+    // 🔁 Step 3: Add GitLab remote and pull its history (merge)
+    await repoGit.addRemote('gitlab', gitlabRepo);
+    console.log(chalk.yellow(`📥 Pulling existing history from GitLab...`));
+    try {
+      await repoGit.pull('gitlab', branch, { '--rebase': 'true' });
+    } catch (pullErr) {
+      console.warn(chalk.gray(`⚠️ Pull warning (may be empty repo): ${pullErr.message}`));
+    }
+
+    // 🔁 Step 4: Push to GitLab
+    console.log(chalk.blue(`🚀 Pushing to GitLab: ${gitlabRepo}`));
+    await repoGit.push('gitlab', branch);
 
     console.log(chalk.green.bold(`✅ Successfully mirrored ${repoName}@${branch} to GitLab`));
     res.status(200).send('Pushed to GitLab');
