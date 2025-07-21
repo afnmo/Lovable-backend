@@ -49,7 +49,7 @@ app.post('/webhook', async (req, res) => {
     const repoGit = simpleGit({ baseDir: localPath });
     await repoGit.removeRemote('origin');
     await repoGit.addRemote('origin', gitlabRepo);
-    await repoGit.push(['-f', 'origin', branch]);
+    await repoGit.push('origin', branch);
 
     console.log(chalk.green.bold(`✅ Successfully mirrored ${repoName}@${branch} to GitLab`));
     res.status(200).send('Pushed to GitLab');
